@@ -1,0 +1,38 @@
+## Installing google and bigquery-related libraries 
+pip install --upgradegoogle-cloud-bigquery
+pip install --ugradegoogle--cloud
+pip install --upgradegoogle-cloud-storage
+pip install pydata-google-auth
+pip install google-cloud-bigquery
+pip install pandas-gbq
+
+
+# Load bigquery library
+from google.cloud import bigqueryhttps://github.com/yeonjin-data/pratice
+import os
+
+
+#구글 클라우드 콘솔에서 json키를 생성한 뒤 그 키 파일을 credentials에 연결함
+credentials_path = '/****************.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIAL'] = credentials_path
+
+
+#구글 서비스키 인증
+from google.oauth2 import service_account
+
+
+#구글 빅쿼리에서 dataframe의 컬럼과 동일하게(컬럼 갯수&type) 테이블을 생성하고
+
+## 전처리된 데이터프레임을 빅쿼리에 저장
+from google.oauth2 import service_account
+import pandas_gbq
+
+cd = service_account.Credentials.from_service_account_file(
+    './***************************.json',
+)
+project_id = 'my-project-67542-phthon-link'    #프로젝트 ID에 :이 있으면 .으로 변환 필요
+destination_table = 'sponsor_traits.sponsor_traits_tables'
+data_2022.to_gbq(destination_table, project_id, if_exists='replace', credentials=cd) 
+print('migration complete')
+
+
