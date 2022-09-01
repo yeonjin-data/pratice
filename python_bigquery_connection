@@ -1,3 +1,5 @@
+## 참고 사이트(references: 1. https://www.youtube.com/watch?v=fmGhBvA5tSo 
+## 참고 사이트(references: 2. https://john-analyst.medium.com/%ED%8C%8C%EC%9D%B4%EC%8D%AC%EC%97%90%EC%84%9C-bigquery%EB%A1%9C-%EB%8D%B0%EC%9D%B4%ED%84%B0-%EC%98%AE%EA%B2%A8%EB%8B%B4%EA%B8%B0-488640f5f824
 ## Installing google and bigquery-related libraries 
 pip install --upgradegoogle-cloud-bigquery
 pip install --ugradegoogle--cloud
