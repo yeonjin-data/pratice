@@ -1,0 +1,286 @@
+##서비스 종료 이후 연결되는 서비스로 transition 시 cancel하는 고객 예측
+
+#구글 코랩에서 작업, 구글드라이브와 연결
+import os
+from google.colab import drive
+drive.mount('/content/gdrive/') 
+
+os.chdir('/content/gdrive/My Drive/해지자 예측/1.*********') 
+
+#필요한 라이브러리 임포트
+import pandas as pd
+import seaborn as sns
+from sklearn import datasets
+import matplotlib.pyplot as plt
+sns.set(style="darkgrid")
+
+#한글 오류 방지
+import matplotlib 
+matplotlib.font_manager._rebuild()
+
+
+#판다스로 전체 고객 리스트 불러오기
+import pandas as pd
+data = pd.read_csv('./2020list_final_edit3.csv', encoding = 'utf-8')
+data.head(5)
+
+# 의사 결정 나무 불러오기
+from sklearn.tree import DecisionTreeClassifier
+
+# scikit learn 가져오기
+from sklearn.model_selection import train_test_split
+import warnings    # warnings : 버전 충돌 및 특정 예외 처리를 위해 불러온 내장 모듈
+warnings.filterwarnings('ignore') 
+
+# 의사 결정 나무 지정 및 데이터 확인
+tree = DecisionTreeClassifier(random_state=123, criterion = 'entropy')   
+
+# 데이터 확인(EDA)
+data.info()
+transition_data.describe(include = 'all')
+transition_data.describe(include = 'O')
+transition_data.isna()
+transition_data.isna().sum()
+data.info()
+sns.countplot
+sns.displot(data['age'], kde = True)
+
+
+#전처리
+sex = {'M' : 0, 'F' : 1}
+data['gender'] = data['gender'].map(sex)
+data.head(12)
+
+#나이 표준화 작업
+age_mean = data['age'].mean()
+age_std = data['age'].std()
+age_size = data['age'].isna().sum()
+
+print(age_mean)
+print(age_std)
+print(age_size)
+
+#난수만들어서 나이 N/A를 정규분포를 따르게해서 N/A채우기
+np.random.seed(123)
+rand_age = abs(np.random.randn(age_size) * age_std + age_mean)
+print(rand_age)
+
+sns.displot(rand_age)  # 난수로 생성한 나이분포가 정규분포인지  확인
+
+data['age'][data['age'].isna()] = rand_age
+data.isna().sum()
+
+sns.displot(data['age'], kde = True)  # N/A를 채운 뒤 전체 나이분포 확인
+plt.show()
+
+#나이 특이값(outlier) 확인
+sns.boxplot(data['age'])
+
+#나이 특이값 제거(0~100세만 포함)
+data = data[
+            (data['age'] > 0 ) &\
+            (data['age'] < 100)
+            ]
+
+sns.boxplot(data['age'])  #나이 특이값 제거된 결과 확인
+
+#원본 데이터 복사
+data2 = data.copy()
+
+#불필요 데이터 삭제
+data2.drop(['pledgeID'], axis = 1, inplace = True)
+data['gender'].value_counts()
+data2.isna().sum()
+data2.dropna(axis = 0, how = 'any', inplace = True)   #N/A가 하나라도 있는 행 삭제
+data2.isna().sum()
+
+
+# 전처리 후 EDA
+sns.scatterplot(data = data, x = 'age', y = 'target')
+sns.countplot(data['target'])
+
+## 예측 머신러닝 진행
+# X와 Y분할
+X_variables = data2.drop(['target'], axis=1)
+Y_class = data2['target'] 
+
+X_variables.describe()
+Y_class.value_counts()
+
+# 머신러닝 라이브러리 불러오기
+from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.model_selection import train_test_split
+import warnings    # warnings : 버전 충돌 및 특정 예외 처리를 위해 불러온 내장 모듈
+warnings.filterwarnings('ignore') 
+
+#훈련데이터 검증 데이터 분할(7:3)
+#class_name 설정해주기(예측의 결과값 명칭(ex. 해지/유지)
+class_name = ['stay', 'cancel']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_variables, Y_class,
+    test_size = 0.3,
+    random_state = 0,
+    stratify = Y_class
+)
+
+# 분할 확인
+print(y_train.value_counts() / y_train.shape[0] * 100)
+print(y_test.value_counts() / y_test.shape[0] * 100)
+
+# 트리모형 선언
+tree = DecisionTreeClassifier(max_depth = 4, random_state = 123, criterion = 'entropy')
+tree.fit(X_train, y_train)  #변수.fit(피쳐 훈련 데이터, 타겟 훈련 데이터)
+
+# 트리 결과 시각화(plot_tree)
+from sklearn.tree import plot_tree
+
+plt.figure(figsize = (45,45))
+plot_tree(tree, feature_names = X_variables.columns, class_names = class_name, filled=True)
+plt.show() 
+
+# Feature별 중요도 파악하기
+import seaborn as sns
+import numpy as np
+%matplotlib inline
+
+print("Feature importances:\n{0}".format(np.round(tree.feature_importances_, 3)))
+
+# 각 변수별 중요도 매핑
+for name, value in zip(data2.columns[:-1], tree.feature_importances_):
+    print('{0} : {1:.3f}'.format(name, value))
+
+# 변수별 중요도를 시각화 하기
+sns.barplot(x=tree.feature_importances_ , y=data2.columns[:-1])
+plt.title("Feature Importance")
+plt.show()
+
+# 예측 정확도 파악
+(tree.predict(X_train) == y_train).mean()
+
+
+#랜덤 포레스트 불러오기
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+import pandas as pd
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
+
+# 먼저, 랜덤 포레스트를 rf라는 변수에 선언!(트리모형보다 더 정확도가 높은 모델 찾기)
+rf = RandomForestClassifier(random_state=10, criterion = 'entropy', n_estimators=15, max_depth=4)
+
+# 랜덤 포레스트를 위한 변수 복사해두기
+X_variables_rf = X_variables.copy()
+Y_class_rf = Y_class.copy()
+
+# 클래스 네임 선언
+class_name = ['cancel', 'stay']
+
+# 훈련/테스트 세트 분할
+X_train , X_test , y_train , y_test = train_test_split(X_variables_rf, Y_class_rf,
+                                                       test_size=0.3,  random_state=11, stratify = Y_class)
+                        
+# 랜덤 포레스트 훈련(fit)시키기                         
+rf.fit(X_train, y_train)  #변수.fit(피쳐 훈련 데이터, 타겟 훈련 데이터)
+
+# 랜덤 포레스트 정확도
+pred = rf.predict(X_test)
+accuracy = accuracy_score(y_test, pred)
+print("랜덤 포레스트 정확도 {0: .3f}".format(accuracy))
+
+# 랜덤 포레스트로 예측시 각 변수의 중요도 파악
+ft_importance_values = rf.feature_importances_ 
+ft_importance_values
+
+# 각 변수의 중요도 시각화
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Feature별 중요도를 추출
+for name, value in zip(data2.columns[:-1], rf.feature_importances_):
+    print("{0} : {1:.3f}".format(name, value))
+
+sns.barplot(x = rf.feature_importances_, y = data2.columns[:-1])
+plt.title("Feature Importance")
+plt.show()
+
+# 랜덤포레스트를 plot_tree로 나타내기 위한 그래픽 라이브러리 불러오기
+from sklearn.tree import plot_tree
+from sklearn.tree import export_graphviz
+# Export as dot file
+export_graphviz(rf.estimators_[5], out_file='tree.dot',
+                feature_names = X_variables_rf.columns,
+                class_names = class_name,
+                rounded = True, proportion = False, 
+                precision = 2, filled = True)
+                
+# 랜덤포레스트를 plot_tree로 시각화하기 (Convert to png using system command (requires Graphviz))
+from subprocess import call
+call(['dot', '-Tpng', 'tree.dot', '-o', 'tree.png', '-Gdpi=400'])
+
+# Display in jupyter notebook
+from IPython.display import Image
+Image(filename = 'tree.png')               
+
+
+## 다른 모델링으로 예측(XGBoost 불러오기)
+import xgboost as xgb
+from xgboost import plot_importance
+from xgboost import XGBClassifier, plot_tree
+from xgboost import XGBRegressor
+from sklearn import datasets
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+
+X_variables_xgb = X_variables.copy()
+Y_class_xgb = Y_class.copy()
+
+# train, test set 분할
+class_name = ['stay', 'cancel']
+X_train , X_test , y_train , y_test = train_test_split(X_variables_xgb, Y_class_xgb,
+                                                       test_size=0.3,  random_state=11, stratify = Y_class_xgb)
+
+xgb_model = XGBClassifier()  #XGboost 선언
+xgb_model.fit(X_train, y_train)    #XGboost 훈련하기
+
+# 정확도 측정
+predict = xgb_model.predict(X_test) 
+print("정확도: {0:.4f}".format(accuracy_score(y_test, predict)))
+
+# 변수별 중요도 파악
+xgb.plot_importance(xgb_model)
+plt.show()
+
+# 필요 라이브러리 불러오기
+import numpy as np
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+from sklearn.inspection import permutation_importance
+from matplotlib import pyplot as plt
+import seaborn as sns # for correlation heatmap
+
+from xgboost import XGBRegressor
+
+# import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Feature별 중요도를 추출
+for name, value in zip(data.columns[:-1], xgb_model.feature_importances_):
+    print("{0} : {1:.3f}".format(name, value))
+
+sns.barplot(xgb_model.feature_importances_, y = data.columns[:-1])  ##barplot error: x, y의 변수 갯수 다시 살펴보기
+plt.title("Feature Importance")
+plt.show()
+
+# XGB 예측의 plot_tree 그리기
+xgb.plot_tree(xgb_model, num_trees = 3)
+plt.gcf().set_size_inches(18.5, 10.5)
+plt.show()
