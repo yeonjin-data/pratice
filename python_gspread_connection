@@ -1,0 +1,35 @@
+# reference: https://lucaseo.github.io/posts/2020-04-12-python-spreadsheet-gspread/
+# 구글스프레드시트 접근 권한 지정(연결)
+from oauth2client.service_account import ServiceAccountCredentials
+
+scope = ["https://spreadsheets.google.com/feeds",
+         "https://www.googleapis.com/auth/spreadsheets",
+         "https://www.googleapis.com/auth/drive.file",
+         "https://www.googleapis.com/auth/drive"]
+
+creds = ServiceAccountCredentials.from_json_keyfile_name("python_gspread.json", scope)
+
+# 구글스프레드시트 라이브러리 불러오기
+import gspread
+
+spreadsheet_name = "후원자 특성_2022(crm)"  #구글 시트 (제목)이름 지정"
+client = gspread.authorize(creds)
+spreadsheet = client.open(spreadsheet_name)
+
+
+# 구글스프레드시트 이름 확인
+for sheet in spreadsheet.worksheets():
+    print(sheet)
+    
+#구글스프레드시트 데이터 확인
+sheet.get_all_records()[:2]
+
+#구글스프레드시트 데이터 불러오기
+def gsheet2df(sheet):
+    df = pd.DataFrame(columns=list(sheet.get_all_records()[0].keys()))
+    for item in sheet.get_all_records():
+        df.loc[len(df)] = item
+    return df
+
+data_2022 = gsheet2df(sheet)
+data_2022.head()
